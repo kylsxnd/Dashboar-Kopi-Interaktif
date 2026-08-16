@@ -1,12 +1,9 @@
-// Data ini didapat langsung dari Streamlit, bukan dari API lagi!
 const rawData = typeof INJECTED_DATA !== 'undefined' ? INJECTED_DATA : [];
-
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
 let provChartInstance = null;
 let trendChartInstance = null;
 
-// Fungsi Filter Data Berdasarkan Dropdown
 function getFilteredData() {
     const yearEl = document.getElementById('year-filter');
     const monthEl = document.getElementById('month-filter');
@@ -19,22 +16,25 @@ function getFilteredData() {
     return filtered;
 }
 
-// 1. Load Dropdown (Bulan & Tahun diambil otomatis dari data)
 function loadOptions() {
     const yearSet = new Set(rawData.map(d => d.Tahun));
     const years = Array.from(yearSet).sort((a,b) => a - b);
     const selectYear = document.getElementById('year-filter');
     if (selectYear) {
+        selectYear.innerHTML = '<option value="">🌎 Semua Tahun (2021-2026)</option>';
         years.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year; option.text = `🌎 Tahun ${year}`;
-            selectYear.appendChild(option);
+            if(year) {
+                const option = document.createElement('option');
+                option.value = year; option.text = `🌎 Tahun ${year}`;
+                selectYear.appendChild(option);
+            }
         });
     }
 
     const monthOrder = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const selectMonth = document.getElementById('month-filter');
     if (selectMonth) {
+        selectMonth.innerHTML = '<option value="">🗓️ Semua Bulan</option>';
         monthOrder.forEach(month => {
             const option = document.createElement('option');
             option.value = month; option.text = `🗓️ ${month}`;
@@ -43,7 +43,6 @@ function loadOptions() {
     }
 }
 
-// 2. Load KPI Cards
 function fetchKPI() {
     const data = getFilteredData();
     const total_robusta = data.reduce((sum, item) => sum + (Number(item['Produksi Robusta (Ton)']) || 0), 0);
@@ -55,16 +54,17 @@ function fetchKPI() {
     document.getElementById('kpi-arabika').innerText = formatNumber(Math.round(total_arabika));
 }
 
-// 3. Load Top Kabupaten
 function fetchTopKabupaten() {
     const data = getFilteredData();
     let kabData = {};
 
     data.forEach(item => {
         let kab = item['Kabupaten/Kota'];
-        if (!kabData[kab]) kabData[kab] = { robusta: 0, arabika: 0 };
-        kabData[kab].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
-        kabData[kab].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+        if(kab) {
+            if (!kabData[kab]) kabData[kab] = { robusta: 0, arabika: 0 };
+            kabData[kab].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
+            kabData[kab].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+        }
     });
 
     let topRobKab = "-", topRobVal = 0;
@@ -81,17 +81,18 @@ function fetchTopKabupaten() {
     document.getElementById('top-val-arabika').innerText = formatNumber(Math.round(topAraVal)) + " Ton";
 }
 
-// 4. Chart Provinsi
 function fetchChartProvinsi() {
     const data = getFilteredData();
     let provData = {};
 
     data.forEach(item => {
         let prov = item['Provinsi'];
-        if (!provData[prov]) provData[prov] = { robusta: 0, arabika: 0, total: 0 };
-        provData[prov].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
-        provData[prov].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
-        provData[prov].total = provData[prov].robusta + provData[prov].arabika;
+        if(prov) {
+            if (!provData[prov]) provData[prov] = { robusta: 0, arabika: 0, total: 0 };
+            provData[prov].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
+            provData[prov].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+            provData[prov].total = provData[prov].robusta + provData[prov].arabika;
+        }
     });
 
     let sortedProv = Object.keys(provData).sort((a, b) => provData[b].total - provData[a].total);
@@ -132,7 +133,6 @@ function fetchChartProvinsi() {
     provChartInstance.setOption(option, true);
 }
 
-// 5. Chart Tren
 function fetchChartTrend() {
     const data = getFilteredData();
     const yearVal = document.getElementById('year-filter') ? document.getElementById('year-filter').value : "";
@@ -141,21 +141,23 @@ function fetchChartTrend() {
     const monthOrder = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     if (yearVal) {
-        // Tampilkan per Bulan
         data.forEach(item => {
             let m = item['Bulan'];
-            if (!trendData[m]) trendData[m] = { robusta: 0, arabika: 0 };
-            trendData[m].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
-            trendData[m].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+            if(m) {
+                if (!trendData[m]) trendData[m] = { robusta: 0, arabika: 0 };
+                trendData[m].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
+                trendData[m].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+            }
         });
         var labels = monthOrder.filter(m => trendData[m]);
     } else {
-        // Tampilkan per Tahun
         data.forEach(item => {
             let y = item['Tahun'];
-            if (!trendData[y]) trendData[y] = { robusta: 0, arabika: 0 };
-            trendData[y].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
-            trendData[y].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+            if(y) {
+                if (!trendData[y]) trendData[y] = { robusta: 0, arabika: 0 };
+                trendData[y].robusta += (Number(item['Produksi Robusta (Ton)']) || 0);
+                trendData[y].arabika += (Number(item['Produksi Arabika (Ton)']) || 0);
+            }
         });
         var labels = Object.keys(trendData).sort((a,b) => a - b);
     }
@@ -183,7 +185,6 @@ function fetchChartTrend() {
     trendChartInstance.setOption(option, true);
 }
 
-// 6. Tabel Data
 function fetchTableData() {
     const data = getFilteredData();
     const thead = document.getElementById('table-head');
@@ -235,19 +236,6 @@ window.addEventListener('resize', () => {
 });
 
 window.onload = () => {
-    // KITA BIKIN KOTAK FILTER BULAN DARI SINI
-    const filterContainer = document.querySelector('.filter-container');
-    if (filterContainer) {
-        filterContainer.innerHTML = `
-            <select id="month-filter" onchange="updateDashboardData()" style="padding: 8px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; cursor: pointer;">
-                <option value="">🗓️ Semua Bulan</option>
-            </select>
-            <select id="year-filter" onchange="updateDashboardData()" style="padding: 8px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; cursor: pointer;">
-                <option value="">🌎 Semua Tahun (2021-2026)</option>
-            </select>
-        `;
-    }
-    
     loadOptions();
     updateDashboardData();
 };
